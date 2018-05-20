@@ -14,6 +14,47 @@ namespace bot
     
     public partial class Form1 : Form
     {
+        void GetWords(ref List<Word> list, ref List<string> captions)
+        {
+            try
+            {
+                string[] lines = File.ReadAllLines(@"E:\doc\cc\words.mmc").ToArray();
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    string tmp = lines[i];
+                    Word res = new Word(tmp.Split(' ')[0]);
+                    Console.WriteLine("length is: " + tmp.Split(' ').Length.ToString() + " counted loops is: " + ((tmp.Split(' ').Length / 2) + 1).ToString());
+                    if ((tmp.Split(' ').Length / 2) + 1 > 2)
+                    {
+                        for (int I = 1; I < (tmp.Split(' ').Length / 2) + 1; I += 2)
+                        {
+
+                            res.AddWord(tmp.Split(' ')[I], Int32.Parse(tmp.Split(' ')[I + 1]));
+                            Console.WriteLine("word " + I.ToString() + " captured");
+                            //good
+                        }
+                    }
+                    list.Add(res);
+                    captions.Add(tmp.Split(' ')[0]);
+                    //good
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+        }
+        public bool ContainArray(string[] a1,string[] a2)
+        {
+            bool res=false;
+            foreach(string s1 in a1)
+            {
+                foreach (string s2 in a2)
+                    if (s1.ToLower() == s2.ToLower())
+                        return true;
+            }
+            return res;
+        }
         Math_1 math_1 = new Math_1();
         BackgroundWorker bw;
         anime_stack.stack as1 = new anime_stack.stack();
@@ -51,6 +92,7 @@ namespace bot
                         }/*
                         if ((message.Type == Telegram.Bot.Types.Enums.MessageType.StickerMessage)&&(message.From.FirstName=="Infinity"))
                             await Bot.DeleteMessageAsync(message.Chat.Id, message.MessageId);*/
+                           
                         if (message.Type == Telegram.Bot.Types.Enums.MessageType.TextMessage)
                         {
                             //music
@@ -60,15 +102,88 @@ namespace bot
                                 await Bot.SendDocumentAsync(message.Chat.Id, f, "here it`s");
                             }*/
                             //crypt
-                            
+                            List<Word> words = new List<Word>();
+                            List<string> wordscaption = new List<string>();
+                            GetWords(ref words, ref wordscaption);
                             MMC bank = new MMC();
                             Store store = new Store();
                             DateTime d = DateTime.Now;
-                            /*
-                            if (d.Minute % 15 == 0)
-                                await Bot.SendTextMessageAsync(message.Chat.Id, "have you done your homework?");
-                                */
+                            string[] commands = {"/getchatid@aaaclub_bot", "/say", "/encrypt", "/anime", "/monday", "/sqr", "/mamka", "/pron", "/doge", "/mining", "/trigger", "/translate", "/mamkate", "/fox", "/counter", "/manvelka", "/viewbalance", "/transfer", "/storeinfo", "/buy", "/getchatid", "/addgood", "/deletegood", "/updatebalance" };
                             
+                            string[] h = message.Text.Split(' ');
+                            if (!ContainArray(h,commands))
+                            {
+                                for (int i = 0; i < h.Length; i++)
+                                {
+                                    if (wordscaption.Contains(h[i]))
+                                    {
+                                        if (i + 1 < h.Length)
+                                            try
+                                            {
+                                                words[wordscaption.IndexOf(h[i])].AddWord(h[i + 1]);
+                                            }
+                                            catch (Exception ex2)
+                                            {
+                                                MessageBox.Show(ex2.Message);
+                                            }
+                                    }
+                                    if (!wordscaption.Contains(h[i]))
+                                    {
+                                        wordscaption.Add(h[i]);
+                                        Word tmpW = new Word(h[i]);
+                                        if (i + 1 < h.Length)
+                                        {
+                                            try
+                                            {
+                                                tmpW.AddWord(h[i + 1]);
+                                            }
+                                            catch (Exception ex2)
+                                            {
+                                                MessageBox.Show(ex2.Message);
+                                            }
+
+                                        }
+                                        words.Add(tmpW);
+                                        //good
+                                    }
+                                }
+                                using (StreamWriter sw = new StreamWriter(@"E:\doc\cc\words.mmc"))
+                                {
+                                    foreach (Word w in words)
+                                        sw.WriteLine(w.BackupWord());
+                                }
+                            }
+                            if (message.Text == message.Text.ToUpper() && !message.Text.Contains(".") && !message.Text.Contains("(") && !message.Text.Contains(")") && !message.Text.Contains('+'))
+                            {
+                                Telegram.Bot.Types.FileToSend[] s = { new Telegram.Bot.Types.FileToSend("CAADAgADtgAD0QABxA2mtwKzCy1LuAI"),
+                                    new Telegram.Bot.Types.FileToSend("CAADAgADnQAD0QABxA0qCVaPhb0-swI"),
+                                    new Telegram.Bot.Types.FileToSend("CAADAgADnwAD0QABxA1K-2P5V_m8CgI"),
+                                    new Telegram.Bot.Types.FileToSend("CAADAgADdQAD0QABxA2IN-acF43gnAI"),
+                                    new Telegram.Bot.Types.FileToSend("CAADAgAD3gAD0QABxA0yIvltTN4SGwI"),
+                                    new Telegram.Bot.Types.FileToSend("CAADAgAD0AAD0QABxA2Q_Jdgq9bU5QI"),
+                                    new Telegram.Bot.Types.FileToSend("CAADAgADzgAD0QABxA0aLVE26vv6JQI"),
+                                    new Telegram.Bot.Types.FileToSend("CAADAgADdAAD0QABxA1jcJHFbFDvIQI"),
+                                    new Telegram.Bot.Types.FileToSend("CAADAgADzwAD0QABxA21rcb257ePPwI"),
+                                };
+                                Random random = new Random();
+                                await Bot.SendStickerAsync(message.Chat.Id, s[random.Next(0,s.Length)], replyToMessageId: message.MessageId);
+                            }
+                            if(message.Text=="/getstickerid")
+                            {
+                                if (message.ReplyToMessage != null)
+                                    try
+                                    {
+                                        Telegram.Bot.Types.FileToSend s = new Telegram.Bot.Types.FileToSend(message.ReplyToMessage.Sticker.FileId);
+                                        await Bot.SendStickerAsync(message.Chat.Id, s);
+                                        await Bot.SendTextMessageAsync(message.Chat.Id, message.ReplyToMessage.Sticker.FileId, replyToMessageId: message.MessageId);
+                                    }
+                                    catch (Exception e1)
+                                    {
+                                        await Bot.SendTextMessageAsync(message.Chat.Id, e1.Message, replyToMessageId: message.MessageId);
+
+                                    }
+
+                            }
                             if (message.Text.Contains("/encrypt"))
                             {
                                 EnCrypt crypt = new EnCrypt();
@@ -508,7 +623,9 @@ namespace bot
                                         {
                                         new Telegram.Bot.Types.KeyboardButton("for paliy"),
                                         new Telegram.Bot.Types.KeyboardButton("for Fedka"),
-                                new Telegram.Bot.Types.KeyboardButton("for normal people"),
+                                                                        new Telegram.Bot.Types.KeyboardButton("for Dubik"),
+                                                                        new Telegram.Bot.Types.KeyboardButton("for normal people"),
+
                                 new Telegram.Bot.Types.KeyboardButton("for artuturik")
                                         },
 
@@ -648,17 +765,26 @@ namespace bot
                             if (message.Text.ToLower() == "for artuturik")
                             {
                                 await Bot.SendTextMessageAsync(message.Chat.Id, "https://yummyanime.com/catalog/item/plastikovye-vospominaniya", replyToMessageId: message.MessageId);
-
+                                
                             }
+                            if (message.Text.ToLower() == "for paliy")
+                            {
+                                await Bot.SendTextMessageAsync(message.Chat.Id, "https://yummyanime.com/catalog/item/lyubovnye-nepriyatnosti-tv1", replyToMessageId: message.MessageId);
+                            }
+                            if (message.Text.ToLower() == "for dubik")
+                            {
+                                await Bot.SendTextMessageAsync(message.Chat.Id, "https://yummyanime.com/catalog/item/naruto-uragannye-hroniki", replyToMessageId: message.MessageId);
+                            }
+
                             if (message.Text.ToLower() == "for fedka")
                             {
                                 await Bot.SendTextMessageAsync(message.Chat.Id, "https://yummyanime.com/catalog/item/neveroyatnye-priklyucheniya-dzhodzho-tv-1", replyToMessageId: message.MessageId);
 
                             }
                             //anime hater
-                            if ((message.Text.ToLower().Contains("anime") || message.Text.ToLower().Contains("аниме")) && !message.Text.ToLower().Contains("/"))
+                            if ((message.Text.ToLower().Contains("anime") || message.Text.ToLower().Contains("манга") || message.Text.ToLower().Contains("аниме") || message.Text.ToLower().Contains("хентай")) && !message.Text.ToLower().Contains("/"))
                             {
-                                await Bot.SendTextMessageAsync(message.Chat.Id, "ANIME - tupoe govno tupogo govna", replyToMessageId: message.MessageId);
+                                await Bot.SendTextMessageAsync(message.Chat.Id, "ANIME, MANGA, HENTAI - tupoe govno tupogo govna", replyToMessageId: message.MessageId);
                             }
                             //translate
 
@@ -716,7 +842,7 @@ namespace bot
                             }
 
                             
-                            if (message.Text.ToLower() .Contains("slavka daun")|| message.Text.ToLower().Contains("slavka eblan")|| message.Text.ToLower().Contains("славка даун") || message.Text.ToLower().Contains("славка еблан"))
+                            if (message.Chat.Id.ToString()== "-1001383573258"&&(message.Text.ToLower() .Contains("slavka daun")|| message.Text.ToLower().Contains("slavka eblan")|| message.Text.ToLower().Contains("славка даун") || message.Text.ToLower().Contains("славка еблан")))
                             {
                                 //ban
                                
@@ -751,10 +877,17 @@ namespace bot
                                 }
                                 finally
                                 {
-                                    await Bot.DeleteMessageAsync(message.Chat.Id, message.MessageId);
+                                    try
+                                    {
+                                        await Bot.DeleteMessageAsync(message.Chat.Id, message.MessageId);
+                                    }
+                                    catch(Exception)
+                                    {
+
+                                    }
 
                                 }
-
+                                
                             }/*
                             if(u.FirstName!=null)
                             if(message.From.FirstName.ToLower()==u.FirstName.ToLower())
