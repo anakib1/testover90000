@@ -72,27 +72,66 @@ namespace bot
             var translate = new Translate();
             var worker = sender as BackgroundWorker;
             Telegram.Bot.Types.User u = new Telegram.Bot.Types.User();
+            var stocks=new Stocks();
             var key = e.Argument as String;
             try
             {
                 var Bot = new Telegram.Bot.TelegramBotClient(key);
                 await Bot.SetWebhookAsync("");
-
                 int offset = 0;
                 while (true)
                 {
                     var updates = await Bot.GetUpdatesAsync(offset);
 
+                    if (DateTime.Now.Minute % 3 == 0 && DateTime.Now.Second==0)
+                    {
+                        try
+                        {
+
+                            stocks = new Stocks();
+                            label1.Text = "updated at: " + DateTime.Now.Minute;
+                        }
+                        catch(Exception e3)
+                        {
+                            label1.Text = "error while update " + e3.Message;
+                            continue;
+                            
+                        }
+                    }
                     foreach (var update in updates)
                     {
                         var message = update.Message;
+                        Security guard = new Security();
+
                         if (message == null)
                         {
                             continue;
                         }/*
                         if ((message.Type == Telegram.Bot.Types.Enums.MessageType.StickerMessage)&&(message.From.FirstName=="Infinity"))
                             await Bot.DeleteMessageAsync(message.Chat.Id, message.MessageId);*/
-                           
+                        textBox3.Text= message.Type.ToString()+"\n";
+                        if(message.Type==Telegram.Bot.Types.Enums.MessageType.PhotoMessage)
+                        {
+
+                            textBox3.Text += message.Text;
+                            try
+                            {
+                                textBox3.Text += "     " + message.ForwardFromChat.Title.ToString();
+                                if (guard.IsBlocked(message.ForwardFromChat.Title.ToString()))
+                                    try
+                                    {
+                                        await Bot.DeleteMessageAsync(message.Chat.Id, message.MessageId);
+                                    }
+                                    catch (Exception e4)
+                                    {
+                                        MessageBox.Show("error while deleting message: " + message.Text + " from " + message.From.Username + " exception text: " + e4.Message);
+                                    }
+                            }
+                            catch (Exception e3)
+                            {
+
+                            }
+                        }
                         if (message.Type == Telegram.Bot.Types.Enums.MessageType.TextMessage)
                         {
                             //music
@@ -108,8 +147,9 @@ namespace bot
                             MMC bank = new MMC();
                             Store store = new Store();
                             DateTime d = DateTime.Now;
-                            string[] commands = {"/getchatid@aaaclub_bot", "/say", "/encrypt", "/anime", "/monday", "/sqr", "/mamka", "/pron", "/doge", "/mining", "/trigger", "/translate", "/mamkate", "/fox", "/counter", "/manvelka", "/viewbalance", "/transfer", "/storeinfo", "/buy", "/getchatid", "/addgood", "/deletegood", "/updatebalance" };
-                            
+                            string[] commands = {"/getbanned","/getchatid@aaaclub_bot", "/say", "/encrypt", "/anime", "/monday", "/sqr", "/mamka", "/pron", "/doge", "/mining", "/trigger", "/translate", "/mamkate", "/fox", "/counter", "/manvelka", "/viewbalance", "/transfer", "/storeinfo", "/buy", "/getchatid", "/addgood", "/deletegood", "/updatebalance" };
+                            textBox3.Text += message.Text;
+
                             string[] h = message.Text.Split(' ');
                             if (!ContainArray(h,commands))
                             {
@@ -184,6 +224,62 @@ namespace bot
                                     }
 
                             }
+                            if(message.Text.Contains("@")&& !message.IsForwarded)
+                            {
+                                string[] tmp = message.Text.Split(' ');
+                                foreach(string s in tmp)
+                                {
+                                    if(guard.IsBlocked(s))
+                                        try
+                                        {
+                                            await Bot.DeleteMessageAsync(message.Chat.Id, message.MessageId);
+                                        }
+                                        catch(Exception e4)
+                                        {
+                                            MessageBox.Show("error while deleting message: " + message.Text + " from " + message.From.Username);
+                                        }
+                                }
+                            }
+                            if (message.Text == "/getbanned" || message.Text == "/getbanned@aaaclub_bot") 
+                            {
+                                string res = String.Empty;
+                                foreach (string s in guard.AllBlocked())
+                                    res += s + "\n";
+                                await Bot.SendTextMessageAsync(message.Chat.Id, res);
+                            }
+
+                            //security
+                            foreach (string s in guard.list)
+                            {
+                                if (message.Text.Contains(s))
+                                {
+                                    try
+                                    {
+                                        await Bot.DeleteMessageAsync(message.Chat.Id, message.MessageId);
+                                    }
+                                    catch (Exception e4)
+                                    {
+                                        MessageBox.Show("error while deleting message: " + message.Text + " from " + message.From.Username+" error message: "+e4.Message);
+                                    }
+                                }
+                            }
+                            try
+                            {
+                                if (guard.IsBlocked("@" + message.ForwardFromChat.Username))
+                                    try
+                                    {
+                                        await Bot.DeleteMessageAsync(message.Chat.Id, message.MessageId);
+                                    }
+                                    catch (Exception e4)
+                                    {
+                                        MessageBox.Show("error while deleting message: " + message.Text + " from " + message.From.Username+ " exception text: "+e4.Message);
+                                    }
+                            }
+                            catch(Exception )
+                            {
+
+                            }
+                            //
                             if (message.Text.Contains("/encrypt"))
                             {
                                 EnCrypt crypt = new EnCrypt();
@@ -211,7 +307,44 @@ namespace bot
 
 
                             }
-                            if(message.Text.Contains("/addanime"))
+                            /*
+                            if(message.Text=="/nout")
+                            {
+                                DateTime da = new DateTime(2018, 1, 12, 20, 59, 0, 0);
+                                string res = (da.Hour - DateTime.Now.Hour).ToString() + " hours " + (da.Minute - DateTime.Now.Minute).ToString() + " minutes";
+                                await Bot.SendTextMessageAsync(message.Chat.Id, res);
+
+                            }
+                            */
+                            if(message.Text=="/getcpu")
+                            {
+                                try
+                                {
+                                    Gpu_info g = new Gpu_info();
+                                    string res = g.GetComponent("Win32_Processor", "Name")[0];
+                                    await Bot.SendTextMessageAsync(message.Chat.Id, res);
+
+                                }
+                                catch (Exception e4)
+                                {
+                                    MessageBox.Show(e4.Message + " while getting gpu info");
+                                }
+                            }
+                            if (message.Text == "/getgpu")
+                            {
+                                try
+                                {
+                                    Gpu_info g = new Gpu_info();
+                                    string res = g.GetComponentGPU();
+                                    await Bot.SendTextMessageAsync(message.Chat.Id, res);
+
+                                }
+                                catch (Exception e4)
+                                {
+                                    MessageBox.Show(e4.Message + " while getting gpu info");
+                                }
+                            }
+                            if (message.Text.Contains("/addanime"))
                             {
                                 try
                                 {
@@ -226,6 +359,29 @@ namespace bot
                                 }
 
                             }
+
+                            if(message.Text.Contains("/getcource"))
+                            {
+                                try
+                                {
+                                    if (message.Text.Split(' ').Length > 1)
+                                    {
+                                        await Bot.SendTextMessageAsync(message.Chat.Id, @stocks.GetAvg(message.Text.Split(' ')[1].ToUpper()));
+
+                                    }
+                                    else
+                                    {
+                                        await Bot.SendTextMessageAsync(message.Chat.Id, "invalid syntax");
+                                    }
+                                }
+                                catch(Exception e4)
+                                {
+                                    //await Bot.SendTextMessageAsync(message.Chat.Id, "error while getting cource , error text: "+e4.Message);
+
+                                }
+
+                            }
+
                             if (message.Text.Contains("/getanime"))
                             {
                                 try
@@ -683,9 +839,9 @@ namespace bot
                                     }
                                     answer = false;
                                 }
-                                catch (Telegram.Bot.Exceptions.ApiRequestException ex)
+                                catch (Exception)
                                 {
-                                    await Bot.SendTextMessageAsync(message.Chat.Id, "error", replyToMessageId: message.MessageId);
+                                    await Bot.SendTextMessageAsync(message.Chat.Id, "error in square root syntax", replyToMessageId: message.MessageId);
                                 }
                             }
                             //sqr
